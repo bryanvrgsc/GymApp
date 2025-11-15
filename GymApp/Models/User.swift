@@ -1,7 +1,22 @@
+//
+//  User.swift
+//  GymApp
+//
+//  Created by Bryan Vargas on 14/11/25.
+//
+
+
 import Foundation
 
 struct User {
-    let id: UUID = UUID()
+    let id: String
     let name: String
-    let subscriptionActive: Bool
+    let membershipExp: Date?
+    
+    var isActive: Bool {
+        if let exp = membershipExp {
+            return exp > Date()
+        }
+        return false
+    }
 }
