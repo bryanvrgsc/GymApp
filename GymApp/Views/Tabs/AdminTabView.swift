@@ -21,16 +21,16 @@ struct AdminTabView: View {
                 }
                 .tag(1)
             
-            AdminUsersView()
+            AdminUsersListView()
                 .tabItem {
                     Image(systemName: "person.2")
                     Text("Usuarios")
                 }
                 .tag(2)
             
-            StaffCheckInView()  // Reuse staff check-in view
+            AdminCheckInActivityView()
                 .tabItem {
-                    Image(systemName: "arrow.left.arrow.right")
+                    Image(systemName: "clock.badge.checkmark")
                     Text("Check-In")
                 }
                 .tag(3)
@@ -225,9 +225,9 @@ struct AdminUsersView: View {
                 .padding()
                 
                 List {
-                    AdminUserRow(name: "Juan Pérez", email: "juan@email.com", role: .user, badge: .gold)
-                    AdminUserRow(name: "María García", email: "maria@email.com", role: .staff, badge: .silver)
-                    AdminUserRow(name: "Carlos López", email: "carlos@email.com", role: .admin, badge: .platinum)
+                    AdminUserRowLegacy(name: "Juan Pérez", email: "juan@email.com", role: .user, badge: .gold)
+                    AdminUserRowLegacy(name: "María García", email: "maria@email.com", role: .staff, badge: .silver)
+                    AdminUserRowLegacy(name: "Carlos López", email: "carlos@email.com", role: .admin, badge: .platinum)
                 }
                 .listStyle(.plain)
             }
@@ -261,7 +261,7 @@ struct RoleFilterChip: View {
     }
 }
 
-struct AdminUserRow: View {
+struct AdminUserRowLegacy: View {
     let name: String
     let email: String
     let role: UserRole
