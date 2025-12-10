@@ -52,83 +52,36 @@ struct UserQRAccessView: View {
     
     private var activeQRView: some View {
         VStack(spacing: 20) {
-            // Header
-            VStack(spacing: 8) {
-                Image(systemName: "checkmark.shield.fill")
-                    .font(.system(size: 40))
-                    .foregroundColor(.green)
-                
-                Text("Membresía Activa")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                
-                if let membership = authState.gymUser?.membership {
-                    Text("\(membership.daysRemaining) días restantes")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-            }
+            Spacer()
             
-            // QR Code
-            ZStack {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.white)
-                    .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
-                
-                if let image = qrImage {
-                    Image(uiImage: image)
-                        .interpolation(.none)
-                        .resizable()
-                        .scaledToFit()
-                        .padding(20)
-                } else {
-                    ProgressView()
-                        .scaleEffect(1.5)
-                }
-            }
-            .frame(width: 280, height: 280)
+            // Premium Access Card
+            PremiumAccessCardView(
+                userName: authState.gymUser?.name ?? "Usuario",
+                badgeTier: currentBadge,
+                qrImage: qrImage,
+                memberSince: authState.gymUser?.createdAt,
+                daysRemaining: authState.gymUser?.membership?.daysRemaining ?? 0,
+                secondsUntilRefresh: qrService.secondsUntilRefresh
+            )
             
-            // Countdown timer
-            VStack(spacing: 4) {
-                HStack(spacing: 8) {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .foregroundColor(.accentColor)
-                    Text("Se actualiza en \(qrService.secondsUntilRefresh)s")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                
-                // Progress bar
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.gray.opacity(0.2))
-                            .frame(height: 6)
-                        
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.accentColor)
-                            .frame(width: geometry.size.width * CGFloat(qrService.secondsUntilRefresh) / 30, height: 6)
-                            .animation(.linear(duration: 1), value: qrService.secondsUntilRefresh)
-                    }
-                }
-                .frame(height: 6)
-                .frame(maxWidth: 200)
-            }
-            .padding(.top, 8)
-            
-            // Instructions
-            VStack(spacing: 8) {
-                Text("Muestra este código al staff")
-                    .font(.headline)
-                Text("El código se actualiza automáticamente cada 30 segundos para tu seguridad")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.top, 16)
+            // Short instruction
+            Text("Muestra este código al staff")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .padding(.top, 16)
             
             Spacer()
         }
+        .padding(.horizontal)
+    }
+    
+    // Computed badge tier
+    private var currentBadge: BadgeTier? {
+        if let badge = authState.gymUser?.currentBadge {
+            return badge
+        }
+        let months = authState.gymUser?.membership?.continuousMonths ?? authState.gymUser?.consecutiveMonths ?? 0
+        return BadgeTier.forMonths(months)
     }
     
     // MARK: - Inactive View

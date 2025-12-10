@@ -8,30 +8,30 @@
 import SwiftUI
 
 /// Tab view for regular users
-/// Tabs: Acceso, Perfil, Asistencias, Ocupación, Ajustes
+/// Tabs: Perfil, Asistencias, Acceso (centro), Ocupación, Ajustes
 struct UserTabView: View {
-    @State private var selection: Int = 1
+    @State private var selection: Int = 3 // Acceso is default (center)
     
     var body: some View {
         TabView(selection: $selection) {
-            UserQRAccessView()
-                .tabItem {
-                    Image(systemName: "qrcode.viewfinder")
-                    Text("Acceso")
-                }
-                .tag(1)
-            
             UserProfileView()
                 .tabItem {
                     Image(systemName: "person.crop.circle")
                     Text("Perfil")
                 }
-                .tag(2)
+                .tag(1)
             
             AttendanceCalendarView()
                 .tabItem {
                     Image(systemName: "calendar")
                     Text("Asistencias")
+                }
+                .tag(2)
+            
+            UserQRAccessView()
+                .tabItem {
+                    Image(systemName: "qrcode.viewfinder")
+                    Text("Acceso")
                 }
                 .tag(3)
             

@@ -1,0 +1,7 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Abstract G Shape - White for Dark Backgrounds -->
+    <path d="M512 280C423.6 280 348 316.4 296 374L234 312C302 234 400 190 512 190C688.7 190 832 333.3 832 510C832 686.7 688.7 830 512 830C335.3 830 192 686.7 192 510C192 458 204.4 409 226.4 366L310 408C292 438.4 282 473 282 510C282 637 385 740 512 740C639 740 742 637 742 510C742 411.6 680.6 327.4 594 296.8V510H512V280Z" fill="white"/>
+    
+    <!-- Dynamic Accent - Electric Blue -->
+    <path d="M594 280V510H828C816 386 720 288 594 280Z" fill="#007AFF"/>
+</svg>

@@ -1,0 +1,50 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="shieldGradient" x1="512" y1="60" x2="512" y2="964" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#007AFF"/>
+            <stop offset="100%" stop-color="#004080"/>
+        </linearGradient>
+        <linearGradient id="silverGradient" x1="200" y1="200" x2="800" y2="800" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#F2F2F7"/>
+            <stop offset="50%" stop-color="#AEAEB2"/>
+            <stop offset="100%" stop-color="#636366"/>
+        </linearGradient>
+        <filter id="dropShadow" x="100" y="100" width="824" height="900" filterUnits="userSpaceOnUse">
+            <feDropShadow dx="0" dy="10" stdDeviation="15" flood-opacity="0.3"/>
+        </filter>
+    </defs>
+
+    <!-- Main Shield Body -->
+    <path d="M512 64C280 64 120 180 120 180V450C120 680 290 890 512 960C734 890 904 680 904 450V180C904 180 744 64 512 64Z" fill="url(#shieldGradient)" filter="url(#dropShadow)"/>
+    
+    <!-- Inner Shield Stroke/Border -->
+    <path d="M512 94C305 94 160 198 150 205V450C150 660 305 852 512 918C719 852 874 660 874 450V205C864 198 719 94 512 94Z" stroke="white" stroke-width="15" stroke-opacity="0.3" fill="none"/>
+
+    <!-- Crossed Barbells (Behind the G) -->
+    <!-- Barbell 1 (Top Left to Bottom Right) -->
+    <g transform="rotate(45 512 512)">
+        <rect x="212" y="492" width="600" height="40" fill="#D1D1D6" rx="5"/>
+        <!-- Weights Left -->
+        <rect x="212" y="472" width="20" height="80" fill="url(#silverGradient)" rx="4"/>
+        <rect x="242" y="462" width="30" height="100" fill="url(#silverGradient)" rx="4"/>
+        <!-- Weights Right -->
+        <rect x="792" y="472" width="20" height="80" fill="url(#silverGradient)" rx="4"/>
+        <rect x="752" y="462" width="30" height="100" fill="url(#silverGradient)" rx="4"/>
+    </g>
+    <!-- Barbell 2 (Top Right to Bottom Left) -->
+    <g transform="rotate(-45 512 512)">
+        <rect x="212" y="492" width="600" height="40" fill="#D1D1D6" rx="5"/>
+        <!-- Weights Left -->
+        <rect x="212" y="472" width="20" height="80" fill="url(#silverGradient)" rx="4"/>
+        <rect x="242" y="462" width="30" height="100" fill="url(#silverGradient)" rx="4"/>
+        <!-- Weights Right -->
+        <rect x="792" y="472" width="20" height="80" fill="url(#silverGradient)" rx="4"/>
+        <rect x="752" y="462" width="30" height="100" fill="url(#silverGradient)" rx="4"/>
+    </g>
+
+    <!-- Central Circle Badge -->
+    <circle cx="512" cy="512" r="180" fill="white" stroke="#E5E5EA" stroke-width="10"/>
+
+    <!-- The "G" Initial -->
+    <path d="M512 392C465 392 425 410 396 438C367 466 352 500 352 542C352 584 367 618 396 646C425 674 465 692 512 692C550 692 578 680 598 664C605 658 615 650 618 642V552H512V512H662V648C650 668 630 688 600 708C575 724 545 732 512 732C450 732 398 710 360 672C322 634 300 588 300 542C300 496 322 450 360 412C398 374 450 352 512 352C555 352 595 365 625 390L595 425C575 405 545 392 512 392Z" fill="#007AFF" stroke="none"/>
+</svg>

@@ -1,0 +1,24 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="mainGradient" x1="100" y1="100" x2="924" y2="924" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#007AFF"/>
+            <stop offset="100%" stop-color="#0056B3"/>
+        </linearGradient>
+    </defs>
+    
+    <!-- Background: Super Ellipse (Squircle) matching iOS App Icon shape -->
+    <path d="M512 64C264.6 64 64 264.6 64 512C64 759.4 264.6 960 512 960C759.4 960 960 759.4 960 512C960 264.6 759.4 64 512 64Z" fill="white"/>
+    
+    <!-- The "G" - Constructed from dynamic concentric paths representing progress and tracks -->
+    
+    <!-- Outer Arc: The "Base" / Strength -->
+    <path d="M800 360C780 310 740 265 690 235C638 204 576 188 512 188C333 188 188 333 188 512C188 691 333 836 512 836C636 836 744 766 800 664" stroke="url(#mainGradient)" stroke-width="110" stroke-linecap="round"/>
+    
+    <!-- Inner Crossbar / Arrow: The "Action" / Access -->
+    <!-- Integrated seamlessly to form the G shape but pointing inward/forward -->
+    <path d="M512 512H760" stroke="url(#mainGradient)" stroke-width="110" stroke-linecap="round"/>
+    
+    <!-- Center Dot: The "User" / Focus point -->
+    <circle cx="512" cy="512" r="5" fill="none"/> 
+    
+</svg>

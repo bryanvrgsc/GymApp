@@ -1,0 +1,20 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="gradient" x1="100" y1="100" x2="900" y2="900" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#007AFF"/>
+            <stop offset="100%" stop-color="#0056B3"/>
+        </linearGradient>
+        <filter id="shadow" x="-50" y="-50" width="1124" height="1124" filterUnits="userSpaceOnUse">
+            <feDropShadow dx="0" dy="10" stdDeviation="20" flood-opacity="0.15"/>
+        </filter>
+    </defs>
+    
+    <!-- Background Container (Optional, remove for transparency) -->
+    <rect x="64" y="64" width="896" height="896" rx="220" fill="white" filter="url(#shadow)"/>
+    
+    <!-- Abstract G / Power Shape -->
+    <path d="M512 280C423.6 280 348 316.4 296 374L234 312C302 234 400 190 512 190C688.7 190 832 333.3 832 510C832 686.7 688.7 830 512 830C335.3 830 192 686.7 192 510C192 458 204.4 409 226.4 366L310 408C292 438.4 282 473 282 510C282 637 385 740 512 740C639 740 742 637 742 510C742 411.6 680.6 327.4 594 296.8V510H512V280Z" fill="url(#gradient)"/>
+    
+    <!-- Dynamic Accent - Upward Motion -->
+    <path d="M594 280V510H828C816 386 720 288 594 280Z" fill="#00C7BE"/>
+</svg>
