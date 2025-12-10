@@ -3,6 +3,11 @@ import SwiftUI
 @main
 struct GymAppApp: App {
     @StateObject private var authState = AuthState.shared
+    
+    init() {
+        // Initialize Firebase
+        FirebaseService.shared.configure()
+    }
 
     var body: some Scene {
         WindowGroup {

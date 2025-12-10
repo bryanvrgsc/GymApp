@@ -9,9 +9,17 @@ final class AuthState: ObservableObject {
     @Published var isAuthenticated: Bool = false
     @Published var tokens: AuthService.Tokens?
     @Published var userProfile: UserProfile? = nil
+    @Published var gymUser: GymUser? = nil  // Firebase user data
+    @Published var currentRole: UserRole = .user {
+        didSet {
+            UserDefaults.standard.set(currentRole.rawValue, forKey: roleKey)
+        }
+    }
 
     private let membershipKey = "membership_exp"
     private let userProfileKey = "user_profile"
+    private let roleKey = "current_role"
+    private let gymUserKey = "gym_user"
 
     init() {
         do {
@@ -30,6 +38,27 @@ final class AuthState: ObservableObject {
                 self.userProfile = profile
             }
         }
+        
+        // Restore persisted GymUser if present
+        if let data = UserDefaults.standard.data(forKey: gymUserKey) {
+            if let user = try? JSONDecoder().decode(GymUser.self, from: data) {
+                self.gymUser = user
+                // Set role based on available roles
+                if let roleRaw = UserDefaults.standard.string(forKey: roleKey),
+                   let role = UserRole(rawValue: roleRaw),
+                   user.roles.contains(role) {
+                    self.currentRole = role
+                } else {
+                    self.currentRole = user.primaryRole
+                }
+            }
+        } else {
+            // Restore persisted role if present (fallback)
+            if let roleRaw = UserDefaults.standard.string(forKey: roleKey),
+               let role = UserRole(rawValue: roleRaw) {
+                self.currentRole = role
+            }
+        }
 
 #if DEBUG
         if let exp = UserDefaults.standard.object(forKey: membershipKey) as? TimeInterval {
@@ -37,6 +66,10 @@ final class AuthState: ObservableObject {
             print("[DEBUG] Loaded membership_exp from UserDefaults = \(exp) -> \(formatDate(d))")
         } else {
             print("[DEBUG] No stored membership_exp")
+        }
+        print("[DEBUG] Current role: \(currentRole.displayName)")
+        if let user = gymUser {
+            print("[DEBUG] GymUser loaded: \(user.name), roles: \(user.roles.map { $0.rawValue })")
         }
 #endif
     }
@@ -50,6 +83,9 @@ final class AuthState: ObservableObject {
 
         // After login, fetch membership_exp from app_metadata or top-level /userinfo and user profile
         await fetchAndStoreMembershipExpAndProfile()
+        
+        // Sync with Firebase Firestore (no Firebase Auth required with open rules)
+        await syncWithFirebase()
     }
 
     func signOut() {
@@ -59,9 +95,13 @@ final class AuthState: ObservableObject {
 
         self.tokens = nil
         self.isAuthenticated = false
+        self.gymUser = nil
+        self.currentRole = .user
 
         UserDefaults.standard.removeObject(forKey: membershipKey)
         UserDefaults.standard.removeObject(forKey: userProfileKey)
+        UserDefaults.standard.removeObject(forKey: gymUserKey)
+        UserDefaults.standard.removeObject(forKey: roleKey)
         self.userProfile = nil
     }
 
@@ -85,8 +125,92 @@ final class AuthState: ObservableObject {
 
         // Update membership and profile
         await fetchAndStoreMembershipExpAndProfile()
+        
+        // Update Firebase
+        await syncWithFirebase()
 
         return newTokens
+    }
+    
+    // MARK: - Firebase Sync
+    
+    /// Sync user data with Firebase on login/refresh
+    private func syncWithFirebase() async {
+        guard let profile = userProfile,
+              let tokens = tokens,
+              let sub = extractAuth0UserId(from: tokens) else {
+            #if DEBUG
+            print("[DEBUG] Cannot sync with Firebase: missing profile or tokens")
+            #endif
+            return
+        }
+        
+        do {
+            // Check if user exists in Firebase
+            if let existingUser = try await FirebaseService.shared.getUser(auth0UserId: sub) {
+                // User exists - update last login
+                try await FirebaseService.shared.updateLastLogin(userId: sub)
+                self.gymUser = existingUser
+                
+                // Set current role to user's primary role if not already set
+                if !existingUser.roles.contains(currentRole) {
+                    self.currentRole = existingUser.primaryRole
+                }
+                
+                #if DEBUG
+                print("[DEBUG] Existing user loaded from Firebase: \(existingUser.name)")
+                #endif
+            } else {
+                // Create new user in Firebase
+                let newUser = try await FirebaseService.shared.createUser(
+                    auth0UserId: sub,
+                    name: profile.name ?? "Usuario",
+                    email: profile.email,
+                    nickname: profile.nickname,
+                    picture: profile.picture
+                )
+                self.gymUser = newUser
+                self.currentRole = .user
+                
+                #if DEBUG
+                print("[DEBUG] New user created in Firebase: \(newUser.name)")
+                #endif
+            }
+            
+            // Persist GymUser locally
+            if let user = gymUser, let data = try? JSONEncoder().encode(user) {
+                UserDefaults.standard.set(data, forKey: gymUserKey)
+            }
+            
+        } catch {
+            #if DEBUG
+            print("[DEBUG] Firebase sync error: \(error.localizedDescription)")
+            #endif
+        }
+    }
+    
+    /// Extract Auth0 user ID from tokens (the 'sub' claim from ID token)
+    private func extractAuth0UserId(from tokens: AuthService.Tokens) -> String? {
+        guard let idToken = tokens.idToken else { return nil }
+        
+        // Decode JWT to get 'sub' claim
+        let parts = idToken.split(separator: ".")
+        guard parts.count >= 2 else { return nil }
+        
+        var base64 = String(parts[1])
+        // Pad base64 if needed
+        let remainder = base64.count % 4
+        if remainder > 0 {
+            base64 += String(repeating: "=", count: 4 - remainder)
+        }
+        
+        guard let data = Data(base64Encoded: base64),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let sub = json["sub"] as? String else {
+            return nil
+        }
+        
+        return sub
     }
 
     // MARK: - Fetch Membership and Profile
@@ -207,6 +331,11 @@ final class AuthState: ObservableObject {
             return exp > Date() ? "Membresía Activa" : "Membresía Expirada"
         }
         return "Sin información de membresía"
+    }
+    
+    /// Check if current user can switch roles
+    var canSwitchRoles: Bool {
+        gymUser?.hasMultipleRoles ?? false
     }
 
     // MARK: - User Profile model

@@ -1,121 +1,26 @@
 import SwiftUI
 import UIKit
 
+/// Main view that switches between different tab views based on user role
 struct MainTabView: View {
-    @State private var selection: Int = 3 // default to Services (3)
-
-    var body: some View {
-        TabView(selection: $selection) {
-            QRAccessView()
-                .tabItem {
-                    Image(systemName: "qrcode.viewfinder")
-                    Text("Acceso")
-                }
-                .tag(1)
-            ContentView()
-                .tabItem {
-                    Image(systemName: "list.bullet")
-                    Text("Servicios")
-                }
-                .tag(2)
-            ProfileView()
-                .tabItem {
-                    Image(systemName: "person.crop.circle")
-                    Text("Perfil")
-                }
-                .tag(3)
-            PromotionsView()
-                .tabItem {
-                    Image(systemName: "tag")
-                    Text("Promociones")
-                }
-                .tag(4)
-            SettingsView()
-                .tabItem {
-                    Image(systemName: "gearshape")
-                    Text("Ajustes")
-                }
-                .tag(5)
-        }
-    }
-}
-
-// MARK: - Placeholder Subviews
-
-struct ProfileView: View {
     @ObservedObject private var authState = AuthState.shared
-    @State private var isRefreshing = false
-    @State private var refreshMessage: String?
-    @State private var showRefreshToast = false
-
+    
     var body: some View {
-        NavigationView {
-            VStack(spacing: 16) {
-                Image(systemName: "person.crop.circle.fill")
-                    .resizable()
-                    .frame(width: 100, height: 100)
-                    .foregroundColor(.accentColor)
-
-                Text(authState.membershipStatus)
-                    .font(.headline)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-
-                if let expiryString = authState.membershipExpiryString {
-                    Text("Expiración: \(expiryString)")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                } else {
-                    Text("Sin información de membresía")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-
-                Button(action: {
-                    Task { await doRefresh() }
-                }) {
-                    if isRefreshing {
-                        ProgressView()
-                    } else {
-                        Text("Actualizar membresía")
-                    }
-                }
-                .buttonStyle(.bordered)
-                .padding(.top, 6)
-
-                if showRefreshToast, let msg = refreshMessage {
-                    Text(msg)
-                        .font(.caption)
-                        .padding(8)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(8)
-                        .transition(.opacity)
-                }
-
-                Spacer()
+        Group {
+            switch authState.currentRole {
+            case .user:
+                UserTabView()
+            case .staff:
+                StaffTabView()
+            case .admin:
+                AdminTabView()
             }
-            .padding()
-            .navigationTitle("Perfil")
         }
-        .animation(.default, value: showRefreshToast)
-    }
-
-    private func doRefresh() async {
-        isRefreshing = true
-        do {
-            _ = try await authState.refreshSession()
-            refreshMessage = "Membresía actualizada"
-        } catch {
-            refreshMessage = "Error al actualizar: \(error.localizedDescription)"
-        }
-        isRefreshing = false
-        withAnimation { showRefreshToast = true }
-        Task {
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
-            withAnimation { showRefreshToast = false }
-        }
+        .animation(.easeInOut(duration: 0.3), value: authState.currentRole)
     }
 }
+
+// MARK: - QR Access View (shared between roles)
 
 struct QRAccessView: View {
     var body: some View {
@@ -137,7 +42,7 @@ struct QRAccessView: View {
                     )
 
                 Button(action: {
-                    // Acción para mostrar/actualizar QR
+                    // TODO: Show/update QR
                 }) {
                     Text("Mostrar QR")
                         .frame(maxWidth: .infinity)
@@ -153,58 +58,8 @@ struct QRAccessView: View {
     }
 }
 
-struct PromotionsView: View {
-    var body: some View {
-        NavigationView {
-            List {
-                Text("Promo 1 — 20% descuento")
-                Text("Promo 2 — Clase gratis")
-            }
-            .navigationTitle("Promociones")
-        }
-    }
-}
+// MARK: - Account View (shared)
 
-struct SettingsView: View {
-    @ObservedObject private var authState = AuthState.shared
-    @State private var showLogoutConfirm = false
-
-    var body: some View {
-        NavigationView {
-            List {
-                Section {
-                    NavigationLink("Soporte", destination: Text("Contacto y FAQ"))
-                    NavigationLink("Gestiona tu cuenta", destination: AccountView())
-                }
-
-                Section {
-                    Button(role: .destructive) {
-                        showLogoutConfirm = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "power")
-                                .foregroundColor(.red)
-                            Text("Cerrar sesión")
-                                .foregroundColor(.primary)
-                        }
-                    }
-                }
-            }
-            .listStyle(.insetGrouped)
-            .navigationTitle("Ajustes")
-            .confirmationDialog("¿Cerrar sesión?", isPresented: $showLogoutConfirm, titleVisibility: .visible) {
-                Button("Cerrar sesión", role: .destructive) {
-                    authState.signOut()
-                }
-                Button("Cancelar", role: .cancel) {}
-            } message: {
-                Text("Se cerrará tu sesión y tendrás que volver a iniciar sesión para acceder.")
-            }
-        }
-    }
-}
-
-// MARK: - Account View (Cuenta)
 struct AccountView: View {
     @ObservedObject private var authState = AuthState.shared
     @State private var userInfo: [String: Any] = [:]
