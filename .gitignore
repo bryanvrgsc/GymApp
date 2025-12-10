@@ -92,4 +92,4 @@ GoogleService-Info.plist
 
 # Auth0
 Auth0.plist
-GymApp/Services/AuthService.swift
+AuthService.swift

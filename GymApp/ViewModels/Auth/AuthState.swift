@@ -136,11 +136,55 @@ final class AuthState: ObservableObject {
     
     /// Sync user data with Firebase on login/refresh
     private func syncWithFirebase() async {
-        guard let profile = userProfile,
-              let tokens = tokens,
-              let sub = extractAuth0UserId(from: tokens) else {
+        guard let tokens = tokens else {
             #if DEBUG
-            print("[DEBUG] Cannot sync with Firebase: missing profile or tokens")
+            print("[DEBUG] Cannot sync with Firebase: missing tokens")
+            #endif
+            return
+        }
+        
+        // Try to get userId from idToken first, then from /userinfo
+        var userId: String? = extractAuth0UserId(from: tokens)
+        var profile = userProfile
+        
+        // If no userId from token or no profile, fetch from /userinfo
+        if userId == nil || profile == nil {
+            do {
+                let info = try await AuthService.shared.getUserInfo(accessToken: tokens.accessToken)
+                
+                // Get sub (userId) from /userinfo response
+                if userId == nil, let sub = info["sub"] as? String {
+                    userId = sub
+                    #if DEBUG
+                    print("[DEBUG] Got userId from /userinfo: \(sub)")
+                    #endif
+                }
+                
+                // Build profile if needed
+                if profile == nil {
+                    var newProfile = UserProfile()
+                    if let name = info["name"] as? String { newProfile.name = name }
+                    if let email = info["email"] as? String { newProfile.email = email }
+                    if let given = info["given_name"] as? String { newProfile.givenName = given }
+                    if let family = info["family_name"] as? String { newProfile.familyName = family }
+                    if let pic = info["picture"] as? String { newProfile.picture = pic }
+                    if let nick = info["nickname"] as? String { newProfile.nickname = nick }
+                    self.userProfile = newProfile
+                    profile = newProfile
+                    #if DEBUG
+                    print("[DEBUG] Fetched profile for Firebase sync: \(newProfile.name ?? "unknown")")
+                    #endif
+                }
+            } catch {
+                #if DEBUG
+                print("[DEBUG] Failed to fetch /userinfo for Firebase sync: \(error)")
+                #endif
+            }
+        }
+        
+        guard let sub = userId, let profile = profile else {
+            #if DEBUG
+            print("[DEBUG] Cannot sync with Firebase: missing userId or profile")
             #endif
             return
         }
@@ -178,7 +222,7 @@ final class AuthState: ObservableObject {
             }
             
             // Persist GymUser locally
-            if let user = gymUser, let data = try? JSONEncoder().encode(user) {
+            if let user = self.gymUser, let data = try? JSONEncoder().encode(user) {
                 UserDefaults.standard.set(data, forKey: gymUserKey)
             }
             

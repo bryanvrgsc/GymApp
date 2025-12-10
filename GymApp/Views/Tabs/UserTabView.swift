@@ -14,7 +14,7 @@ struct UserTabView: View {
     
     var body: some View {
         TabView(selection: $selection) {
-            QRAccessView()
+            UserQRAccessView()
                 .tabItem {
                     Image(systemName: "qrcode.viewfinder")
                     Text("Acceso")
@@ -28,7 +28,7 @@ struct UserTabView: View {
                 }
                 .tag(2)
             
-            AttendanceView()
+            AttendanceCalendarView()
                 .tabItem {
                     Image(systemName: "calendar")
                     Text("Asistencias")

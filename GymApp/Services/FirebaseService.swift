@@ -118,6 +118,33 @@ final class FirebaseService {
         ])
     }
     
+    /// Update user profile (admin only)
+    func updateUserProfile(
+        userId: String,
+        name: String,
+        email: String?,
+        roles: [UserRole],
+        notificationsEnabled: Bool
+    ) async throws {
+        let ref = db.collection("users").document(userId)
+        
+        var data: [String: Any] = [
+            "name": name,
+            "roles": roles.map { $0.rawValue },
+            "notificationsEnabled": notificationsEnabled
+        ]
+        
+        if let email = email {
+            data["email"] = email
+        }
+        
+        try await ref.updateData(data)
+        
+        #if DEBUG
+        print("[FirebaseService] Updated user profile: \(userId), roles: \(roles.map { $0.rawValue })")
+        #endif
+    }
+    
     // MARK: - Attendance Operations
     
     /// Record check-in
@@ -154,6 +181,46 @@ final class FirebaseService {
         #endif
     }
     
+    /// Record check-in from QR scanner (creates new document)
+    func recordCheckIn(userId: String, staffId: String, gymId: String) async throws {
+        let data: [String: Any] = [
+            "userId": userId,
+            "type": "checkin",
+            "timestamp": FieldValue.serverTimestamp(),
+            "processedBy": staffId,
+            "gymId": gymId
+        ]
+        
+        let ref = try await db.collection("checkins").addDocument(data: data)
+        
+        // Update occupancy
+        try await incrementOccupancy()
+        
+        #if DEBUG
+        print("[FirebaseService] QR Check-in recorded: \(ref.documentID)")
+        #endif
+    }
+    
+    /// Record check-out from QR scanner (creates new document)
+    func recordCheckOut(userId: String, staffId: String, gymId: String) async throws {
+        let data: [String: Any] = [
+            "userId": userId,
+            "type": "checkout",
+            "timestamp": FieldValue.serverTimestamp(),
+            "processedBy": staffId,
+            "gymId": gymId
+        ]
+        
+        let ref = try await db.collection("checkins").addDocument(data: data)
+        
+        // Update occupancy
+        try await decrementOccupancy()
+        
+        #if DEBUG
+        print("[FirebaseService] QR Check-out recorded: \(ref.documentID)")
+        #endif
+    }
+    
     /// Get user's attendance history
     func getAttendanceHistory(userId: String, limit: Int = 30) async throws -> [AttendanceRecord] {
         let snapshot = try await db.collection("attendance")
@@ -164,6 +231,71 @@ final class FirebaseService {
         
         return snapshot.documents.compactMap { doc in
             AttendanceRecord(from: doc.data(), id: doc.documentID)
+        }
+    }
+    
+    /// Get user's checkins for a month (from /checkins collection)
+    /// Note: Fetches all user's checkins and filters locally to avoid composite index requirement
+    func getUserCheckins(userId: String, startDate: Date, endDate: Date) async throws -> [Checkin] {
+        #if DEBUG
+        print("[FirebaseService] Fetching checkins for userId: \(userId)")
+        print("[FirebaseService] Date range: \(startDate) to \(endDate)")
+        #endif
+        
+        let snapshot = try await db.collection("checkins")
+            .whereField("userId", isEqualTo: userId)
+            .getDocuments()
+        
+        #if DEBUG
+        print("[FirebaseService] Found \(snapshot.documents.count) total checkins for user")
+        #endif
+        
+        let allCheckins = snapshot.documents.compactMap { doc -> Checkin? in
+            Checkin(from: doc.data(), id: doc.documentID)
+        }
+        
+        // Filter by date range locally
+        let filtered = allCheckins.filter { checkin in
+            checkin.timestamp >= startDate && checkin.timestamp <= endDate
+        }.sorted { $0.timestamp < $1.timestamp }
+        
+        #if DEBUG
+        print("[FirebaseService] Filtered to \(filtered.count) checkins in date range")
+        #endif
+        
+        return filtered
+    }
+    
+    /// Get all checkins for a user (for stats calculation)
+    func getAllUserCheckins(userId: String, limit: Int = 500) async throws -> [Checkin] {
+        #if DEBUG
+        print("[FirebaseService] Fetching all checkins for userId: \(userId)")
+        #endif
+        
+        let snapshot = try await db.collection("checkins")
+            .whereField("userId", isEqualTo: userId)
+            .getDocuments()
+        
+        let checkins = snapshot.documents.compactMap { doc in
+            Checkin(from: doc.data(), id: doc.documentID)
+        }.sorted { $0.timestamp > $1.timestamp }
+        
+        #if DEBUG
+        print("[FirebaseService] Found \(checkins.count) total checkins")
+        #endif
+        
+        return Array(checkins.prefix(limit))
+    }
+    
+    /// Get recent checkins for admin activity view (all users)
+    func getRecentCheckins(limit: Int = 100) async throws -> [Checkin] {
+        let snapshot = try await db.collection("checkins")
+            .order(by: "timestamp", descending: true)
+            .limit(to: limit)
+            .getDocuments()
+        
+        return snapshot.documents.compactMap { doc in
+            Checkin(from: doc.data(), id: doc.documentID)
         }
     }
     

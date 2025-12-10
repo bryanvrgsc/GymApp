@@ -95,7 +95,7 @@ struct MembershipRenewalView: View {
                     }
                 }
             }
-            .onChange(of: searchQuery) { newValue in
+            .onChange(of: searchQuery) { _, newValue in
                 if newValue.count >= 2 {
                     Task { await searchUsers() }
                 } else if newValue.isEmpty {
@@ -280,36 +280,26 @@ struct RenewalFormView: View {
                 
                 // Plan selection
                 Section("Plan") {
-                    Picker("Tipo de plan", selection: $selectedPlan) {
-                        ForEach(PlanType.allCases) { plan in
-                            Text(plan.displayName).tag(plan)
+                    // Plan options with prices
+                    ForEach(PlanType.allCases) { plan in
+                        HStack {
+                            Image(systemName: selectedPlan == plan ? "checkmark.circle.fill" : "circle")
+                                .foregroundColor(selectedPlan == plan ? .accentColor : .secondary)
+                            
+                            Text(plan.displayName)
+                                .fontWeight(selectedPlan == plan ? .semibold : .regular)
+                            
+                            Spacer()
+                            
+                            Text("$\(Int(plan.suggestedPrice)) MXN")
+                                .foregroundColor(.secondary)
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selectedPlan = plan
+                            amount = String(Int(plan.suggestedPrice))
                         }
                     }
-                    .pickerStyle(.segmented)
-                    
-                    // Plan details
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(PlanType.allCases) { plan in
-                            HStack {
-                                Image(systemName: selectedPlan == plan ? "checkmark.circle.fill" : "circle")
-                                    .foregroundColor(selectedPlan == plan ? .accentColor : .secondary)
-                                
-                                Text(plan.displayName)
-                                    .fontWeight(selectedPlan == plan ? .semibold : .regular)
-                                
-                                Spacer()
-                                
-                                Text("$\(Int(plan.suggestedPrice)) MXN")
-                                    .foregroundColor(.secondary)
-                            }
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                selectedPlan = plan
-                                amount = String(Int(plan.suggestedPrice))
-                            }
-                        }
-                    }
-                    .padding(.vertical, 8)
                 }
                 
                 // Payment section
