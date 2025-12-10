@@ -14,10 +14,10 @@ struct StaffTabView: View {
     
     var body: some View {
         TabView(selection: $selection) {
-            StaffCheckInView()
+            StaffQRScannerView()
                 .tabItem {
-                    Image(systemName: "arrow.left.arrow.right")
-                    Text("Check-In/Out")
+                    Image(systemName: "qrcode.viewfinder")
+                    Text("Check-In")
                 }
                 .tag(1)
             

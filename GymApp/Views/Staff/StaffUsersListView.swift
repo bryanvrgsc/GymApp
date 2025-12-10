@@ -18,6 +18,13 @@ struct StaffUsersListView: View {
     @State private var selectedUser: GymUser?
     @State private var showRenewalForm = false
     @State private var showUserDetail = false
+    @State private var membershipFilter: MembershipFilter = .all
+    
+    enum MembershipFilter: String, CaseIterable {
+        case all = "Todos"
+        case active = "Activos"
+        case inactive = "Inactivos"
+    }
     
     var body: some View {
         NavigationView {
@@ -50,6 +57,16 @@ struct StaffUsersListView: View {
                     StatPill(title: "Activos", value: "\(activeCount)", color: .green)
                     StatPill(title: "Expirados", value: "\(expiredCount)", color: .red)
                 }
+                .padding(.horizontal)
+                .padding(.bottom, 8)
+                
+                // Membership filter
+                Picker("Filtro", selection: $membershipFilter) {
+                    ForEach(MembershipFilter.allCases, id: \.self) { filter in
+                        Text(filter.rawValue).tag(filter)
+                    }
+                }
+                .pickerStyle(.segmented)
                 .padding(.horizontal)
                 .padding(.bottom, 8)
                 
@@ -109,8 +126,11 @@ struct StaffUsersListView: View {
                     UserDetailSheet(user: user)
                 }
             }
-            .onChange(of: searchQuery) { query in
-                filterUsers(query: query)
+            .onChange(of: searchQuery) { _, query in
+                applyFilters()
+            }
+            .onChange(of: membershipFilter) { _, _ in
+                applyFilters()
             }
             .task {
                 await loadUsers()
@@ -132,7 +152,7 @@ struct StaffUsersListView: View {
             let fetchedUsers = try await FirebaseService.shared.getAllUsers(limit: 100)
             await MainActor.run {
                 users = fetchedUsers
-                filterUsers(query: searchQuery)
+                applyFilters()
             }
         } catch {
             #if DEBUG
@@ -142,17 +162,30 @@ struct StaffUsersListView: View {
         isLoading = false
     }
     
-    private func filterUsers(query: String) {
-        if query.isEmpty {
-            filteredUsers = users
-        } else {
-            let lowercased = query.lowercased()
-            filteredUsers = users.filter { user in
+    private func applyFilters() {
+        var result = users
+        
+        // Apply membership filter
+        switch membershipFilter {
+        case .all:
+            break
+        case .active:
+            result = result.filter { $0.membership?.isActive == true || $0.isActive }
+        case .inactive:
+            result = result.filter { $0.membership?.isActive != true && !$0.isActive }
+        }
+        
+        // Apply search filter
+        if !searchQuery.isEmpty {
+            let lowercased = searchQuery.lowercased()
+            result = result.filter { user in
                 user.name.lowercased().contains(lowercased) ||
                 (user.email?.lowercased().contains(lowercased) ?? false) ||
                 (user.nickname?.lowercased().contains(lowercased) ?? false)
             }
         }
+        
+        filteredUsers = result
     }
 }
 
@@ -405,21 +438,29 @@ struct UserDetailSheet: View {
                             .foregroundColor(.secondary)
                     } else {
                         if !user.favoriteEquipment.isEmpty {
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: 8) {
                                 Text("Equipos")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
-                                Text(user.favoriteEquipment.joined(separator: ", "))
-                                    .font(.subheadline)
+                                
+                                PreferenceIconsGridView(
+                                    items: user.favoriteEquipment.compactMap { id in
+                                        EquipmentItem.allItems.first { $0.id == id }
+                                    }.map { ($0.name, $0.iconName) }
+                                )
                             }
                         }
                         if !user.favoriteActivities.isEmpty {
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: 8) {
                                 Text("Actividades")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
-                                Text(user.favoriteActivities.joined(separator: ", "))
-                                    .font(.subheadline)
+                                
+                                PreferenceIconsGridView(
+                                    items: user.favoriteActivities.compactMap { id in
+                                        ActivityItem.allItems.first { $0.id == id }
+                                    }.map { ($0.name, $0.iconName) }
+                                )
                             }
                         }
                     }
@@ -525,6 +566,36 @@ struct UserDetailSheet: View {
         case "twitter": return "at"
         case "auth0", "email": return "envelope"
         default: return "person.circle"
+        }
+    }
+}
+
+// MARK: - Preference Icons Grid View
+
+struct PreferenceIconsGridView: View {
+    let items: [(name: String, icon: String)]
+    
+    var body: some View {
+        LazyVGrid(columns: [
+            GridItem(.adaptive(minimum: 70))
+        ], spacing: 8) {
+            ForEach(items, id: \.name) { item in
+                VStack(spacing: 4) {
+                    Image(systemName: item.icon)
+                        .font(.title2)
+                        .foregroundColor(.accentColor)
+                        .frame(width: 40, height: 40)
+                        .background(Color.accentColor.opacity(0.1))
+                        .clipShape(Circle())
+                    
+                    Text(item.name)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(width: 70)
+            }
         }
     }
 }
