@@ -4,6 +4,21 @@ Aplicación para iOS que permite a los usuarios registrados de un gimnasio acced
 
 ---
 
+## 📸 Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/perfil.png" width="18%" alt="Perfil"/>
+  <img src="docs/screenshots/asistencias.png" width="18%" alt="Asistencias"/>
+  <img src="docs/screenshots/acceso.png" width="18%" alt="Acceso QR"/>
+  <img src="docs/screenshots/ocupacion.png" width="18%" alt="Ocupación"/>
+  <img src="docs/screenshots/ajustes.png" width="18%" alt="Ajustes"/>
+</p>
+<p align="center">
+  <img src="docs/screenshots/cambiar-rol.png" width="18%" alt="Cambiar de Rol"/>
+</p>
+
+---
+
 ## 📱 Características
 - **Autenticación segura** con Auth0.
 - **Perfil de usuario**:
@@ -21,7 +36,7 @@ Aplicación para iOS que permite a los usuarios registrados de un gimnasio acced
 - **Swift 5+**
 - **SwiftUI**: para interfaces declarativas
 - **Combine**: para manejo reactivo de datos
-- **Auth0**: para autenticación y gestión de usuarios
+- **Firebase**: autenticación, Firestore, y tracking de asistencias
 - **Xcode 15+**
 
 ---
